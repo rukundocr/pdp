@@ -77,6 +77,23 @@ st.markdown("""
         border-left: 4px solid #ffc107;
         margin: 1rem 0;
     }
+    .progress-card {
+        background: #ffffff;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        border-left: 5px solid;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .progress-card:hover {
+        transform: translateY(-2px);
+    }
+    .progress-status {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -225,9 +242,23 @@ with col1:
 with col2:
     st.markdown(f"**Email:** {project.get('email', 'N/A')}")
 
-# Project Progress
+# Project Progress Cards
 st.subheader("Project Progress")
+cols = st.columns(3)
+current_col = 0
+
 for stage in status_columns:
     status = project[stage]
-    emoji = "✅" if status == "Done" else "🕐" if status == "In Progress" else "❌"
-    st.markdown(f"{emoji} **{stage}**: {status}")
+    color = "#2ecc71" if status == "Done" else "#f1c40f" if status == "In Progress" else "#e74c3c"
+    
+    with cols[current_col]:
+        st.markdown(f"""
+            <div class="progress-card" style="border-color: {color}">
+                <div style="font-size: 1.1rem; font-weight: 600;">{stage}</div>
+                <div class="progress-status" style="color: {color}">
+                    {status}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    current_col = (current_col + 1) % 3
