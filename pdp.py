@@ -63,6 +63,20 @@ st.markdown("""
         padding-bottom: 0.3rem;
         color: #1f77b4;
     }
+    .description-box {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        border-left: 4px solid #2ecc71;
+    }
+    .novelty-badge {
+        background-color: #fff3cd;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+        margin: 1rem 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -170,15 +184,16 @@ st.plotly_chart(fig_radar, use_container_width=True)
 st.markdown('<div class="section-header">📋 All Projects Table</div>', unsafe_allow_html=True)
 columns_to_display = [
     "Founder name", "Project/Startup name", "Project Category",
-    "Phone", "email", "DECISION"
+    "Phone", "email", "DECISION", "NOVELTY"
 ] + status_columns
 st.dataframe(df[columns_to_display], use_container_width=True)
 
 # ================== PROJECT DETAIL ==================
 st.markdown('<div class="section-header">🔍 Project Detailed View</div>', unsafe_allow_html=True)
-selected_project_detail = st.selectbox("Select Project for Details", projects)
+selected_project_detail = st.selectbox("Select Project for Details", df["Project/Startup name"].unique(), key="detail_view")
 project = df[df["Project/Startup name"] == selected_project_detail].iloc[0]
 
+# Basic Information
 st.subheader("Basic Information")
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -188,6 +203,21 @@ with col2:
 with col3:
     st.markdown(f"**Decision:** {project['DECISION']}")
 
+# Project Description
+st.subheader("Project Description")
+st.markdown(f'<div class="description-box">{project["Project Description"]}</div>', unsafe_allow_html=True)
+
+# Novelty Section
+if pd.notna(project.get("NOVELTY")) and str(project["NOVELTY"]).strip() != "":
+    st.subheader("Key Innovation")
+    st.markdown(f'''
+        <div class="novelty-badge">
+            <h4>✨ Unique Value Proposition</h4>
+            <p>{project["NOVELTY"]}</p>
+        </div>
+    ''', unsafe_allow_html=True)
+
+# Contact Information
 st.subheader("Contact Information")
 col1, col2 = st.columns(2)
 with col1:
@@ -195,6 +225,7 @@ with col1:
 with col2:
     st.markdown(f"**Email:** {project.get('email', 'N/A')}")
 
+# Project Progress
 st.subheader("Project Progress")
 for stage in status_columns:
     status = project[stage]
