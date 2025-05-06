@@ -122,7 +122,7 @@ status_columns = [
 
 for col in status_columns:
     if col in df.columns:
-        df[col] = df[col].fillna("Not Started").str.strip()
+        df[col] = df[col].fillna("N/A").str.strip()
 
 # ================== METRICS BADGES ==================
 total_projects = len(df)
@@ -133,16 +133,16 @@ mechanical_done = (df['Mechanical Assembling'] == 'Done').sum()
 mvp_done = (df['MVP'] == 'Done').sum()
 
 st.markdown('<div class="section-header">📊 Key Metrics</div>', unsafe_allow_html=True)
-st.markdown("""
+st.markdown(f"""
     <div class="badge-container">
-        <div class="badge"><h4>Total Projects</h4><p>{}</p></div>
-        <div class="badge"><h4>CAD Design Completed</h4><p>{}</p></div>
-        <div class="badge"><h4>CAD Production Completed</h4><p>{}</p></div>
-        <div class="badge"><h4>PCB Design Completed</h4><p>{}</p></div>
-        <div class="badge"><h4>Mechanical Assembling Completed</h4><p>{}</p></div>
-        <div class="badge"><h4>MVP Achieved</h4><p>{}</p></div>
+        <div class="badge"><h4>Total Projects</h4><p>{total_projects}</p></div>
+        <div class="badge"><h4>CAD Design Completed</h4><p>{cad_design_done}</p></div>
+        <div class="badge"><h4>CAD Production Completed</h4><p>{cad_production_done}</p></div>
+        <div class="badge"><h4>PCB Design Completed</h4><p>{pcb_design_done}</p></div>
+        <div class="badge"><h4>Mechanical Assembling Completed</h4><p>{mechanical_done}</p></div>
+        <div class="badge"><h4>MVP Achieved</h4><p>{mvp_done}</p></div>
     </div>
-""".format(total_projects, cad_design_done, cad_production_done, pcb_design_done, mechanical_done, mvp_done), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ================== VISUALIZATION 1 ==================
 st.markdown('<div class="section-header">📌 Project Status Overview</div>', unsafe_allow_html=True)
@@ -180,15 +180,18 @@ projects = df["Project/Startup name"].unique()
 selected_project = st.selectbox("Select Project", projects)
 project_data = df[df["Project/Startup name"] == selected_project].iloc[0]
 status_values = [project_data[col] for col in status_columns]
-score_map = {"Done": 1.0, "In Progress": 0.5, "Not Started": 0.0, "N/A": 0.0}
+
+score_map = {"Done": 1.0, "In Progress": 0.5, "Not Started": 0.0, "N/A": None}
 scores = [score_map.get(status, 0.0) for status in status_values]
 
+# Handle N/A by replacing None with 0 and showing dashed lines
 fig_radar = go.Figure()
 fig_radar.add_trace(go.Scatterpolar(
-    r=scores,
+    r=[s if s is not None else 0 for s in scores],
     theta=status_columns,
     fill='toself',
-    name=selected_project
+    name=selected_project,
+    line=dict(dash='solid')
 ))
 fig_radar.update_layout(
     polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
@@ -238,27 +241,31 @@ if pd.notna(project.get("NOVELTY")) and str(project["NOVELTY"]).strip() != "":
 st.subheader("Contact Information")
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown(f"**Phone:** {project.get('Phone', 'N/A')}")
+    st.markdown(f"📞 **Phone:** {project['Phone']}")
 with col2:
-    st.markdown(f"**Email:** {project.get('email', 'N/A')}")
+    st.markdown(f"📧 **Email:** {project['email']}")
 
-# Project Progress Cards
+# Project Progress
 st.subheader("Project Progress")
-cols = st.columns(3)
-current_col = 0
-
 for stage in status_columns:
     status = project[stage]
-    color = "#2ecc71" if status == "Done" else "#f1c40f" if status == "In Progress" else "#e74c3c"
-    
-    with cols[current_col]:
-        st.markdown(f"""
-            <div class="progress-card" style="border-color: {color}">
-                <div style="font-size: 1.1rem; font-weight: 600;">{stage}</div>
-                <div class="progress-status" style="color: {color}">
-                    {status}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    current_col = (current_col + 1) % 3
+    color_map = {
+        "Done": "#2ecc71",
+        "In Progress": "#f1c40f",
+        "Not Started": "#e74c3c",
+        "N/A": "#bdc3c7"
+    }
+    st.markdown(f'''
+        <div class="progress-card" style="border-left-color: {color_map.get(status, '#bdc3c7')}">
+            <strong>{stage}</strong>
+            <div class="progress-status">{status}</div>
+        </div>
+    ''', unsafe_allow_html=True)
+
+# Footer
+st.markdown("""
+<hr style="margin-top: 2rem;"/>
+<div style="text-align: center; color: #999;">
+    Made with ❤️ by <strong>UNIPOD Rwanda</strong> | Powered by <strong>Streamlit</strong>
+</div>
+""", unsafe_allow_html=True)
